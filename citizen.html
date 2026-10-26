@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GramSeva – Citizen Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">
+    <div class="navbar-logo">🏛️</div>
+    <div>
+      <div class="navbar-title">GramSeva</div>
+      <div class="navbar-sub">Citizen Portal</div>
+    </div>
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="citizen.html" class="active">Citizen Portal</a></li>
+    <li><a href="map.html">Complaint Map</a></li>
+    <li><a href="admin.html" class="btn-nav btn">Admin</a></li>
+  </ul>
+</nav>
+
+<!-- LOGIN SECTION (shown first) -->
+<div id="login-section" style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,var(--green-50) 0%,#fff 100%)">
+  <div style="width:100%;max-width:400px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:3rem;margin-bottom:12px">📱</div>
+      <h1 style="font-size:1.6rem;font-weight:700;color:var(--slate-900)">Citizen Login</h1>
+      <p class="text-muted text-sm" style="margin-top:6px">Enter your mobile number to continue</p>
+    </div>
+
+    <!-- Phone step -->
+    <div id="step-phone" class="card" style="padding:28px">
+      <div class="form-group">
+        <label class="form-label">Mobile Number <span>*</span></label>
+        <div style="display:flex;gap:8px">
+          <div style="padding:10px 12px;border:1.5px solid var(--slate-200);border-radius:var(--radius);background:var(--slate-100);font-size:.9rem;color:var(--slate-500)">+91</div>
+          <input type="tel" id="phone-input" class="form-input" placeholder="Enter 10-digit number" maxlength="10" style="flex:1">
+        </div>
+      </div>
+
+      <!-- Language selector -->
+      <div class="form-group">
+        <label class="form-label">Preferred Language</label>
+        <select id="lang-select" class="form-select">
+          <option value="en">English</option>
+          <option value="mr">मराठी (Marathi)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+        </select>
+      </div>
+
+      <button class="btn btn-green btn-full" onclick="sendOTP()">Send OTP →</button>
+      <p class="text-xs text-muted text-center" style="margin-top:12px">Demo: any 10-digit number works</p>
+    </div>
+
+    <!-- OTP step -->
+    <div id="step-otp" class="card hidden" style="padding:28px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:2rem">🔐</div>
+        <h3 style="margin-top:8px;color:var(--slate-900)">Enter OTP</h3>
+        <p class="text-sm text-muted" id="otp-hint">Sent to +91 XXXXXXXXXX</p>
+      </div>
+      <div class="otp-inputs">
+        <input type="text" maxlength="1" class="otp-digit" id="o1" oninput="otpNext(this,'o2')">
+        <input type="text" maxlength="1" class="otp-digit" id="o2" oninput="otpNext(this,'o3')">
+        <input type="text" maxlength="1" class="otp-digit" id="o3" oninput="otpNext(this,'o4')">
+        <input type="text" maxlength="1" class="otp-digit" id="o4" oninput="otpNext(this,'o5')">
+        <input type="text" maxlength="1" class="otp-digit" id="o5" oninput="otpNext(this,'o6')">
+        <input type="text" maxlength="1" class="otp-digit" id="o6" oninput="otpNext(this,null)">
+      </div>
+      <button class="btn btn-green btn-full" onclick="verifyOTP()">Verify & Login</button>
+      <p class="text-xs text-muted text-center" style="margin-top:12px">Demo OTP: <strong>123456</strong></p>
+      <button class="btn btn-outline" style="color:var(--slate-500);border-color:var(--slate-200);margin-top:8px;width:100%;justify-content:center" onclick="document.getElementById('step-otp').classList.add('hidden');document.getElementById('step-phone').classList.remove('hidden')">← Change Number</button>
+    </div>
+  </div>
+</div>
+
+<!-- CITIZEN DASHBOARD (shown after login) -->
+<div id="citizen-section" class="hidden">
+  <!-- Welcome bar -->
+  <div style="background:var(--green-900);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <span style="font-weight:600" id="welcome-name">Welcome!</span>
+      <span class="text-xs" style="opacity:.7;margin-left:12px" id="welcome-phone"></span>
+    </div>
+    <button onclick="logout()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.82rem">Logout</button>
+  </div>
+
+  <div style="max-width:900px;margin:0 auto;padding:32px 20px">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('new')">📝 New Complaint</button>
+      <button class="tab-btn" onclick="switchTab('my')">📋 My Complaints</button>
+      <button class="tab-btn" onclick="switchTab('track')">🔍 Track Complaint</button>
+      <button class="tab-btn" onclick="switchTab('nearby')">🗺️ Nearby Issues</button>
+    </div>
+
+    <!-- TAB: NEW COMPLAINT -->
+    <div id="tab-new">
+      <div class="card" style="padding:28px">
+        <h2 style="font-size:1.2rem;font-weight:700;color:var(--slate-900);margin-bottom:20px">📝 File a New Complaint</h2>
+
+        <!-- AI Voice -->
+        <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">
+          🎙️ Speak Your Complaint (Marathi / Hindi / English)
+        </button>
+
+        <!-- Category -->
+        <div class="form-group">
+          <label class="form-label">Select Category <span>*</span></label>
+          <div class="cat-grid" id="cat-grid">
+            <div class="cat-btn" onclick="selectCat(this,'Water Supply')"><div class="cat-icon">💧</div><div class="cat-name">Water Supply</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Roads')"><div class="cat-icon">🛣️</div><div class="cat-name">Roads</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Street Lights')"><div class="cat-icon">💡</div><div class="cat-name">Street Lights</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Drainage')"><div class="cat-icon">🌊</div><div class="cat-name">Drainage</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Garbage')"><div class="cat-icon">🗑️</div><div class="cat-name">Garbage</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Sanitation')"><div class="cat-icon">🧹</div><div class="cat-name">Sanitation</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Public Toilets')"><div class="cat-icon">🚻</div><div class="cat-name">Public Toilets</div></div>
+            <div class="cat-btn" onclick="selectCat(this,'Other')"><div class="cat-icon">📋</div><div class="cat-name">Other</div></div>
+          </div>
+          <input type="hidden" id="sel-cat">
+        </div>
+
+        <!-- AI detected priority -->
+        <div id="ai-priority-box" class="hidden" style="background:var(--saffron-lt);border:1px solid var(--saffron);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:.85rem">
+          🤖 <strong>AI detected priority:</strong> <span id="ai-priority-val"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Describe the Issue <span>*</span></label>
+          <textarea id="complaint-desc" class="form-textarea" placeholder="Describe the civic problem in detail..." oninput="aiDetect(this.value)"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group">
+            <label class="form-label">Your Name <span>*</span></label>
+            <input type="text" id="c-name" class="form-input" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location / Landmark <span>*</span></label>
+            <input type="text" id="c-location" class="form-input" placeholder="Street / Ward / Landmark">
+          </div>
+        </div>
+
+        <!-- GPS -->
+        <div class="form-group">
+          <label class="form-label">GPS Location</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="c-gps" class="form-input" placeholder="Click to capture GPS" readonly>
+            <button class="btn btn-green btn-sm" onclick="captureGPS()">📍 Capture</button>
+          </div>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="form-group">
+          <label class="form-label">Upload Photo / Video</label>
+          <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+            <div style="font-size:2rem">📷</div>
+            <p>Click to upload or drag & drop<br><span class="text-xs" style="color:var(--slate-500)">JPG, PNG, MP4 · max 10MB</span></p>
+          </div>
+          <input type="file" id="file-input" accept="image/*,video/*" class="hidden" onchange="previewFile(this)">
+          <div id="file-preview" class="hidden" style="margin-top:10px;display:flex;align-items:center;gap:10px;background:var(--green-50);border-radius:var(--radius);padding:10px">
+            <span id="file-icon" style="font-size:1.4rem">📎</span>
+            <span id="file-name" class="text-sm"></span>
+            <button onclick="clearFile()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--slate-500);font-size:18px">✕</button>
+          </div>
+        </div>
+
+        <!-- Duplicate warning -->
+        <div id="dup-warning" class="hidden" style="background:var(--saffron-lt);border:1px solid var(--saffron);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:.85rem">
+          ⚠️ <strong>Possible Duplicate:</strong> A similar complaint may already exist — <a href="#" onclick="switchTab('my');return false">check your complaints</a>.
+        </div>
+
+        <button class="btn btn-primary btn-full" style="font-size:1rem;padding:14px" onclick="submitComplaint()">
+          Submit Complaint →
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB: MY COMPLAINTS -->
+    <div id="tab-my" class="hidden">
+      <div class="flex-between mb-16">
+        <h2 style="font-size:1.2rem;font-weight:700;color:var(--slate-900)">📋 My Complaints</h2>
+        <button class="btn btn-sm btn-green" onclick="loadMyComplaints()">↻ Refresh</button>
+      </div>
+      <div id="my-complaints-list"></div>
+    </div>
+
+    <!-- TAB: TRACK -->
+    <div id="tab-track" class="hidden">
+      <div class="card" style="padding:28px;margin-bottom:20px">
+        <h2 style="font-size:1.2rem;font-weight:700;color:var(--slate-900);margin-bottom:16px">🔍 Track a Complaint</h2>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="track-input" class="form-input" placeholder="Enter Complaint ID  e.g. GRM-2026-000123" style="text-transform:uppercase">
+          <button class="btn btn-green" onclick="trackComplaint()">Track →</button>
+        </div>
+      </div>
+      <div id="track-result"></div>
+    </div>
+
+    <!-- TAB: NEARBY -->
+    <div id="tab-nearby" class="hidden">
+      <h2 style="font-size:1.2rem;font-weight:700;color:var(--slate-900);margin-bottom:16px">🗺️ Nearby Civic Issues</h2>
+      <div style="background:#e8f4ea;border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;text-align:center;color:var(--slate-500)">
+        <div style="font-size:2rem;margin-bottom:8px">🗺️</div>
+        <p class="text-sm">Full map view available on the <a href="map.html" style="color:var(--green-700);font-weight:600">Complaint Map</a> page</p>
+      </div>
+      <div id="nearby-list" class="grid grid-2"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:16px">🎉</div>
+    <h2 style="font-size:1.3rem;font-weight:700;color:var(--slate-900);margin-bottom:8px">Complaint Filed!</h2>
+    <p class="text-muted text-sm" style="margin-bottom:20px">Your complaint has been registered. Keep your ID safe.</p>
+    <div style="background:var(--green-50);border:2px dashed var(--green-300);border-radius:var(--radius);padding:16px;margin-bottom:20px">
+      <div class="text-xs text-muted" style="margin-bottom:4px">Complaint ID</div>
+      <div id="new-complaint-id" style="font-size:1.4rem;font-weight:700;color:var(--green-700);font-family:monospace"></div>
+    </div>
+    <div id="success-trail" style="margin-bottom:20px"></div>
+    <p class="text-xs text-muted" style="margin-bottom:16px">Estimated resolution: <strong>5–7 working days</strong></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-green" onclick="UI.closeModal('success-modal');switchTab('my');loadMyComplaints()">View My Complaints</button>
+      <button class="btn" style="background:var(--slate-100);color:var(--slate-700)" onclick="UI.closeModal('success-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal-overlay" id="feedback-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⭐ Give Feedback</span>
+      <button class="modal-close" onclick="UI.closeModal('feedback-modal')">✕</button>
+    </div>
+    <input type="hidden" id="feedback-cid">
+    <div class="form-group">
+      <label class="form-label">Rate the resolution</label>
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <span class="rating-star" data-val="1" onclick="setRating(1)" style="font-size:1.8rem;cursor:pointer">⭐</span>
+        <span class="rating-star" data-val="2" onclick="setRating(2)" style="font-size:1.8rem;cursor:pointer">⭐</span>
+        <span class="rating-star" data-val="3" onclick="setRating(3)" style="font-size:1.8rem;cursor:pointer">⭐</span>
+        <span class="rating-star" data-val="4" onclick="setRating(4)" style="font-size:1.8rem;cursor:pointer">⭐</span>
+        <span class="rating-star" data-val="5" onclick="setRating(5)" style="font-size:1.8rem;cursor:pointer">⭐</span>
+      </div>
+      <input type="hidden" id="rating-val" value="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Comments</label>
+      <textarea id="feedback-comment" class="form-textarea" placeholder="How was the resolution? Any suggestions?"></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-green" onclick="submitFeedback()">Submit Feedback</button>
+      <button class="btn btn-danger" onclick="UI.closeModal('feedback-modal')">Issue Not Fixed</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="db.js"></script>
+<script>
+  let currentPhone = '';
+  let selectedCat  = '';
+  let voiceActive  = false;
+  let recognition  = null;
+  let aiPriority   = 'Medium';
+
+  // ── OTP flow ──────────────────────────────────
+  function sendOTP() {
+    const ph = document.getElementById('phone-input').value.trim();
+    if (!/^\d{10}$/.test(ph)) { UI.toast('Enter a valid 10-digit mobile number', 'error'); return; }
+    currentPhone = ph;
+    document.getElementById('otp-hint').textContent = `OTP sent to +91 ${ph}`;
+    document.getElementById('step-phone').classList.add('hidden');
+    document.getElementById('step-otp').classList.remove('hidden');
+    document.getElementById('o1').focus();
+    UI.toast('OTP sent! (Demo OTP: 123456)', 'info');
+  }
+
+  function otpNext(el, nextId) {
+    el.value = el.value.replace(/\D/,'');
+    if (el.value && nextId) document.getElementById(nextId)?.focus();
+    // Auto verify when all filled
+    const all = ['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+    if (all.length===6) verifyOTP();
+  }
+
+  function verifyOTP() {
+    const otp = ['o1','o2','o3','o4','o5','o6'].map(id=>document.getElementById(id).value).join('');
+    if (otp !== '123456') { UI.toast('Incorrect OTP. Demo OTP is 123456', 'error'); return; }
+    DB.setSession({ phone: currentPhone, name: 'Citizen', loginAt: Date.now() });
+    showCitizenDashboard();
+  }
+
+  function showCitizenDashboard() {
+    const s = DB.getSession();
+    if (!s) return;
+    document.getElementById('login-section').classList.add('hidden');
+    document.getElementById('citizen-section').classList.remove('hidden');
+    document.getElementById('welcome-phone').textContent = `+91 ${s.phone}`;
+    loadMyComplaints();
+    loadNearby();
+    // Check hash for deep link
+    if (location.hash === '#track') switchTab('track');
+  }
+
+  function logout() {
+    DB.clearSession();
+    document.getElementById('citizen-section').classList.add('hidden');
+    document.getElementById('login-section').classList.remove('hidden');
+    ['o1','o2','o3','o4','o5','o6'].forEach(id=>{ document.getElementById(id).value=''; });
+    document.getElementById('step-otp').classList.add('hidden');
+    document.getElementById('step-phone').classList.remove('hidden');
+    document.getElementById('phone-input').value='';
+  }
+
+  // ── Tabs ──────────────────────────────────────
+  function switchTab(t) {
+    ['new','my','track','nearby'].forEach(id=>{
+      document.getElementById(`tab-${id}`).classList.add('hidden');
+    });
+    document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+      b.classList.toggle('active', ['new','my','track','nearby'][i]===t);
+    });
+    document.getElementById(`tab-${t}`).classList.remove('hidden');
+    if (t==='my') loadMyComplaints();
+  }
+
+  // ── Category ──────────────────────────────────
+  function selectCat(el, cat) {
+    document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedCat = cat;
+    document.getElementById('sel-cat').value = cat;
+  }
+
+  // ── AI priority detection ─────────────────────
+  const highWords   = ['urgent','accident','danger','overflow','fire','flood','collapse','critical','emergency','3 days','no water'];
+  const lowWords    = ['minor','small','suggestion','request'];
+
+  function aiDetect(text) {
+    const t = text.toLowerCase();
+    let p = 'Medium';
+    if (highWords.some(w=>t.includes(w))) p = 'High';
+    else if (lowWords.some(w=>t.includes(w))) p = 'Low';
+    aiPriority = p;
+    const box = document.getElementById('ai-priority-box');
+    const val = document.getElementById('ai-priority-val');
+    if (text.length > 15) {
+      val.innerHTML = `<strong>${p}</strong> — <span class="pill ${p==='High'?'pill-high':p==='Low'?'pill-low':'pill-medium'}">${p}</span>`;
+      box.classList.remove('hidden');
+    } else { box.classList.add('hidden'); }
+
+    // Duplicate check
+    const all = DB.getComplaints();
+    const desc = text.toLowerCase();
+    const dup = all.find(c=> c.category===selectedCat && c.phone===currentPhone &&
+      c.status !== 'Resolved' && c.status !== 'Citizen Verified' && desc.length > 10);
+    document.getElementById('dup-warning').classList.toggle('hidden', !dup);
+  }
+
+  // ── Voice ─────────────────────────────────────
+  function toggleVoice() {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      UI.toast('Voice not supported in this browser. Try Chrome.', 'error'); return;
+    }
+    const btn = document.getElementById('voice-btn');
+    if (voiceActive) {
+      recognition?.stop(); voiceActive=false;
+      btn.classList.remove('recording');
+      btn.innerHTML='🎙️ Speak Your Complaint (Marathi / Hindi / English)';
+      return;
+    }
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRec();
+    const lang = document.getElementById('lang-select')?.value || 'en';
+    recognition.lang = lang==='mr'?'mr-IN': lang==='hi'?'hi-IN':'en-IN';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.onresult = e => {
+      const t = Array.from(e.results).map(r=>r[0].transcript).join('');
+      document.getElementById('complaint-desc').value = t;
+      aiDetect(t);
+    };
+    recognition.onend = ()=>{ voiceActive=false; btn.classList.remove('recording'); btn.innerHTML='🎙️ Speak Your Complaint'; };
+    recognition.start();
+    voiceActive=true;
+    btn.classList.add('recording');
+    btn.innerHTML='🔴 Recording... Click to Stop';
+  }
+
+  // ── GPS ───────────────────────────────────────
+  function captureGPS() {
+    if (!navigator.geolocation) { UI.toast('GPS not supported','error'); return; }
+    UI.toast('Capturing GPS...','info');
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lng = pos.coords.longitude.toFixed(4);
+        document.getElementById('c-gps').value = `${lat}, ${lng}`;
+        UI.toast(`GPS captured: ${lat}, ${lng}`, 'success');
+      },
+      () => {
+        // Demo fallback
+        const lat = (18.52 + Math.random()*.02).toFixed(4);
+        const lng = (73.85 + Math.random()*.02).toFixed(4);
+        document.getElementById('c-gps').value = `${lat}, ${lng} (demo)`;
+        UI.toast('Using demo GPS coordinates','info');
+      }
+    );
+  }
+
+  // ── File Upload ───────────────────────────────
+  function previewFile(input) {
+    if (!input.files.length) return;
+    const f = input.files[0];
+    document.getElementById('file-preview').classList.remove('hidden');
+    document.getElementById('file-name').textContent = f.name;
+    document.getElementById('file-icon').textContent = f.type.startsWith('video')?'🎥':'📷';
+  }
+  function clearFile() {
+    document.getElementById('file-input').value='';
+    document.getElementById('file-preview').classList.add('hidden');
+  }
+
+  // ── Submit ────────────────────────────────────
+  function submitComplaint() {
+    const cat  = document.getElementById('sel-cat').value;
+    const desc = document.getElementById('complaint-desc').value.trim();
+    const name = document.getElementById('c-name').value.trim();
+    const loc  = document.getElementById('c-location').value.trim();
+    const gps  = document.getElementById('c-gps').value;
+    if (!cat)  { UI.toast('Select a category','error'); return; }
+    if (!desc) { UI.toast('Describe the issue','error'); return; }
+    if (!name) { UI.toast('Enter your name','error'); return; }
+    if (!loc)  { UI.toast('Enter location/landmark','error'); return; }
+
+    const gpsParts = gps.replace('(demo)','').split(',');
+    const c = DB.addComplaint({
+      category: cat, desc, name, phone: currentPhone,
+      location: loc, priority: aiPriority,
+      lat: parseFloat(gpsParts[0])||18.52, lng: parseFloat(gpsParts[1])||73.85,
+    });
+
+    document.getElementById('new-complaint-id').textContent = c.id;
+    document.getElementById('success-trail').innerHTML = UI.statusTrail('Submitted');
+    UI.openModal('success-modal');
+    resetForm();
+    loadMyComplaints();
+  }
+
+  function resetForm() {
+    document.getElementById('complaint-desc').value='';
+    document.getElementById('c-name').value='';
+    document.getElementById('c-location').value='';
+    document.getElementById('c-gps').value='';
+    document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected'));
+    selectedCat=''; aiPriority='Medium';
+    document.getElementById('ai-priority-box').classList.add('hidden');
+    document.getElementById('dup-warning').classList.add('hidden');
+    clearFile();
+  }
+
+  // ── My Complaints ─────────────────────────────
+  function loadMyComplaints() {
+    const s = DB.getSession();
+    if (!s) return;
+    const list = DB.getComplaintsByPhone(s.phone);
+    const el = document.getElementById('my-complaints-list');
+    if (!list.length) {
+      el.innerHTML=`<div class="card" style="text-align:center;padding:40px;color:var(--slate-500)">
+        <div style="font-size:2.5rem;margin-bottom:12px">📭</div>
+        <p>No complaints yet. <a href="#" onclick="switchTab('new');return false" style="color:var(--green-700);font-weight:600">File your first complaint →</a></p>
+      </div>`;
+      return;
+    }
+    el.innerHTML = list.map(c=>`
+      <div class="card" style="margin-bottom:14px">
+        <div class="flex-between mb-16">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.4rem">${UI.catIcon(c.category)}</span>
+            <div>
+              <div class="complaint-id">${c.id}</div>
+              <div class="text-xs text-muted">${c.category} · ${UI.formatDate(c.createdAt)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            ${UI.statusPill(c.status)}
+            ${UI.priorityPill(c.priority)}
+          </div>
+        </div>
+        <p class="text-sm" style="margin-bottom:12px;color:var(--slate-700)">${c.desc}</p>
+        <div class="text-xs text-muted" style="margin-bottom:14px">📍 ${c.location} ${c.assignedTo?`· 👤 ${c.assignedTo}`:''}</div>
+        ${UI.statusTrail(c.status)}
+        ${c.status==='Resolved' && !c.citizenVerified ? `
+          <div style="margin-top:14px;padding:12px;background:var(--green-50);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <span class="text-sm">Was your issue fixed? Please verify.</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-green btn-sm" onclick="verifyResolution('${c.id}')">✅ Yes, Fixed</button>
+              <button class="btn btn-sm" style="background:var(--red-lt);color:var(--red);border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:600" onclick="openFeedback('${c.id}')">❌ Not Fixed</button>
+            </div>
+          </div>` : ''}
+        ${c.status==='Citizen Verified' && !c.feedback ? `<div style="margin-top:10px"><button class="btn btn-sm" style="background:var(--saffron-lt);color:var(--saffron-dk);border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:600" onclick="openFeedback('${c.id}')">⭐ Give Feedback</button></div>` : ''}
+        ${c.feedback ? `<div style="margin-top:10px;padding:10px;background:var(--green-50);border-radius:var(--radius);font-size:.82rem;color:var(--slate-600)">⭐ Feedback: ${c.feedback}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // ── Track ─────────────────────────────────────
+  function trackComplaint() {
+    const id = document.getElementById('track-input').value.trim().toUpperCase();
+    if (!id) { UI.toast('Enter a complaint ID','error'); return; }
+    const c = DB.getComplaint(id);
+    const el = document.getElementById('track-result');
+    if (!c) {
+      el.innerHTML=`<div class="card" style="text-align:center;padding:28px;color:var(--red)">❌ No complaint found with ID <strong>${id}</strong>. Check and try again.</div>`;
+      return;
+    }
+    el.innerHTML=`
+      <div class="track-card">
+        <div class="flex-between mb-16">
+          <div>
+            <div class="track-id">${c.id}</div>
+            <div class="text-xs text-muted">${c.category} · Filed ${UI.formatDate(c.createdAt)}</div>
+          </div>
+          <div style="display:flex;gap:6px">${UI.statusPill(c.status)} ${UI.priorityPill(c.priority)}</div>
+        </div>
+        ${UI.statusTrail(c.status)}
+        <div style="margin-top:20px;border-top:1px solid var(--slate-200);padding-top:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div><div class="text-xs text-muted">Complainant</div><div class="text-sm text-bold">${c.name}</div></div>
+            <div><div class="text-xs text-muted">Location</div><div class="text-sm text-bold">📍 ${c.location}</div></div>
+            <div><div class="text-xs text-muted">Category</div><div class="text-sm text-bold">${UI.catIcon(c.category)} ${c.category}</div></div>
+            <div><div class="text-xs text-muted">Assigned To</div><div class="text-sm text-bold">${c.assignedTo||'Not yet assigned'}</div></div>
+          </div>
+          <div class="text-xs text-muted" style="margin-bottom:6px;font-weight:600">Timeline</div>
+          ${c.timeline.map(t=>`
+            <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--slate-200)">
+              <div style="width:6px;height:6px;border-radius:50%;background:var(--green-500);margin-top:6px;flex-shrink:0"></div>
+              <div>
+                <div class="text-sm text-bold">${t.status}</div>
+                <div class="text-xs text-muted">${UI.formatDate(t.time)} · ${t.note}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Verify Resolution ─────────────────────────
+  function verifyResolution(id) {
+    DB.updateComplaint(id, { status:'Citizen Verified', citizenVerified:true, note:'Citizen confirmed resolution.' });
+    UI.toast('Thank you for verifying! Issue marked as resolved.','success');
+    loadMyComplaints();
+    setTimeout(()=>openFeedback(id), 800);
+  }
+
+  function openFeedback(id) {
+    document.getElementById('feedback-cid').value = id;
+    UI.openModal('feedback-modal');
+  }
+
+  let currentRating = 0;
+  function setRating(v) {
+    currentRating = v;
+    document.getElementById('rating-val').value = v;
+    document.querySelectorAll('.rating-star').forEach((s,i)=>{
+      s.textContent = i < v ? '⭐' : '☆';
+    });
+  }
+
+  function submitFeedback() {
+    const id = document.getElementById('feedback-cid').value;
+    const comment = document.getElementById('feedback-comment').value.trim();
+    const r = currentRating;
+    const fb = `${r} star${r!==1?'s':''} — ${comment||'No additional comments.'}`;
+    DB.updateComplaint(id, { feedback: fb, status:'Citizen Verified', citizenVerified:true });
+    UI.closeModal('feedback-modal');
+    UI.toast('Feedback submitted! Thank you.','success');
+    loadMyComplaints();
+    currentRating=0;
+    document.getElementById('feedback-comment').value='';
+    document.querySelectorAll('.rating-star').forEach(s=>s.textContent='☆');
+  }
+
+  // ── Nearby ────────────────────────────────────
+  function loadNearby() {
+    const all = DB.getComplaints().filter(c=>c.status!=='Citizen Verified').slice(0,8);
+    document.getElementById('nearby-list').innerHTML = all.map(c=>`
+      <div class="card" style="padding:16px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:1.4rem">${UI.catIcon(c.category)}</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:.88rem;color:var(--slate-900)">${c.category}</div>
+            <div class="text-xs text-muted">📍 ${c.location}</div>
+            <div style="margin-top:6px">${UI.statusPill(c.status)}</div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Auto login if session exists ──────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const s = DB.getSession();
+    if (s && (Date.now() - s.loginAt < 3600000)) {
+      currentPhone = s.phone;
+      showCitizenDashboard();
+    }
+  });
+</script>
+</body>
+</html>

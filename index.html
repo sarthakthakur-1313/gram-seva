@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GramSeva – Civic Grievance Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">
+    <div class="navbar-logo">🏛️</div>
+    <div>
+      <div class="navbar-title">GramSeva</div>
+      <div class="navbar-sub">Gram Panchayat Portal</div>
+    </div>
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="citizen.html">Citizen Portal</a></li>
+    <li><a href="map.html">Complaint Map</a></li>
+    <li><a href="admin.html" class="btn-nav btn">Admin Login</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">🇮🇳 Gram Panchayat Digital Initiative</div>
+  <h1>Your Village,<br><span>Your Voice</span></h1>
+  <p>Register, track and resolve civic complaints directly with your Gram Panchayat — transparently, efficiently, in your language.</p>
+  <div class="hero-actions">
+    <a href="citizen.html" class="btn btn-primary">📝 File a Complaint</a>
+    <a href="citizen.html#track" class="btn btn-outline">🔍 Track My Complaint</a>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="s-total">—</div><div class="stat-label">Total Complaints</div></div>
+  <div class="stat-item"><div class="stat-num" id="s-pending" style="color:var(--saffron-dk)">—</div><div class="stat-label">Pending</div></div>
+  <div class="stat-item"><div class="stat-num" id="s-progress" style="color:var(--blue)">—</div><div class="stat-label">In Progress</div></div>
+  <div class="stat-item"><div class="stat-num" id="s-resolved" style="color:var(--green-700)">—</div><div class="stat-label">Resolved</div></div>
+</div>
+
+<div class="section">
+  <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px">How it works</p>
+  <h2 class="section-title">Simple. Transparent. Accountable.</h2>
+  <p class="section-sub">GramSeva bridges citizens and Panchayat officials with technology.</p>
+  <div class="grid grid-3">
+    <div class="card"><div class="card-icon icon-saffron">📱</div><h3>File in Minutes</h3><p>Choose a category, describe your issue, add a photo and GPS location — submit in under 2 minutes.</p></div>
+    <div class="card"><div class="card-icon icon-blue">🔍</div><h3>Track in Real Time</h3><p>Every complaint gets a unique ID like <code style="font-size:.78rem;color:var(--green-700)">GRM-2026-000123</code>. Track from Submitted to Verified.</p></div>
+    <div class="card"><div class="card-icon icon-green">✅</div><h3>Verify Resolution</h3><p>You confirm when your issue is truly fixed. Officials upload proof; you approve or escalate.</p></div>
+    <div class="card"><div class="card-icon icon-saffron">🎙️</div><h3>Voice Input (Marathi)</h3><p>Speak your complaint in Marathi. AI transcribes and auto-classifies it — no typing needed.</p></div>
+    <div class="card"><div class="card-icon icon-blue">🗺️</div><h3>Village Problem Map</h3><p>All complaints pinned on your village map. See hotspots; officials prioritise faster.</p></div>
+    <div class="card"><div class="card-icon icon-green">🤖</div><h3>AI Smart Routing</h3><p>Auto category detection, priority scoring and duplicate detection — zero manual sorting.</p></div>
+  </div>
+</div>
+
+<div style="background:var(--green-50);border-top:1px solid var(--green-100);border-bottom:1px solid var(--green-100);padding:60px 24px">
+  <div style="max-width:1100px;margin:0 auto">
+    <h2 class="section-title" style="text-align:center">Complaint Journey</h2>
+    <p class="section-sub" style="text-align:center">From report to resolution — tracked every step</p>
+    <div style="max-width:700px;margin:28px auto 0" id="journey-trail"></div>
+    <div class="grid grid-4" style="margin-top:32px">
+      <div style="text-align:center;padding:16px"><div style="font-size:2rem;margin-bottom:8px">1️⃣</div><div style="font-weight:600;font-size:.9rem">Citizen Files</div><div class="text-sm text-muted">App or web form with photo + GPS</div></div>
+      <div style="text-align:center;padding:16px"><div style="font-size:2rem;margin-bottom:8px">2️⃣</div><div style="font-weight:600;font-size:.9rem">Admin Assigns</div><div class="text-sm text-muted">Officer routes to correct employee</div></div>
+      <div style="text-align:center;padding:16px"><div style="font-size:2rem;margin-bottom:8px">3️⃣</div><div style="font-weight:600;font-size:.9rem">Work Happens</div><div class="text-sm text-muted">Employee fixes issue; uploads proof</div></div>
+      <div style="text-align:center;padding:16px"><div style="font-size:2rem;margin-bottom:8px">4️⃣</div><div style="font-weight:600;font-size:.9rem">Citizen Verifies</div><div class="text-sm text-muted">You confirm; give feedback</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Complaint Categories</h2>
+  <p class="section-sub">Raise issues across all civic departments.</p>
+  <div class="grid grid-4">
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">💧</div><h3 style="margin-top:8px">Water Supply</h3><p>Pipeline leaks, low pressure, no supply.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">🛣️</div><h3 style="margin-top:8px">Roads & Potholes</h3><p>Damaged roads, missing speed-breakers.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">💡</div><h3 style="margin-top:8px">Street Lights</h3><p>Broken lamps, dark areas, faulty wiring.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">🌊</div><h3 style="margin-top:8px">Drainage</h3><p>Overflow, blocked drains, flooding.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">🗑️</div><h3 style="margin-top:8px">Garbage</h3><p>Missed collection, dumping, litter.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">🧹</div><h3 style="margin-top:8px">Sanitation</h3><p>Open defecation, poor hygiene.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">🚻</div><h3 style="margin-top:8px">Public Toilets</h3><p>Locked, dirty or non-functional facilities.</p></div>
+    <div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:2.2rem">📋</div><h3 style="margin-top:8px">Other Issues</h3><p>Any civic problem not listed above.</p></div>
+  </div>
+</div>
+
+<div style="background:var(--slate-900);padding:14px 24px">
+  <div style="display:flex;align-items:center;gap:16px;max-width:1100px;margin:0 auto">
+    <span style="color:var(--saffron);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;white-space:nowrap">🔴 Live</span>
+    <div id="ticker" style="color:rgba(255,255,255,.8);font-size:.85rem;transition:opacity .3s"></div>
+  </div>
+</div>
+
+<div style="background:var(--green-900);color:#fff;padding:60px 24px;text-align:center">
+  <h2 style="font-size:1.8rem;font-weight:700;margin-bottom:12px">Ready to report an issue?</h2>
+  <p style="opacity:.8;margin-bottom:28px">It takes less than 2 minutes. Just your mobile number.</p>
+  <a href="citizen.html" class="btn btn-primary" style="font-size:1rem;padding:14px 32px">📝 File a Complaint Now</a>
+</div>
+
+<footer><strong>GramSeva</strong> — Civic Grievance Portal &nbsp;|&nbsp; Gram Panchayat Digital Initiative &nbsp;|&nbsp; Made with ❤️ for Rural India</footer>
+<div id="toast-container" class="toast-container"></div>
+
+<script src="db.js"></script>
+<script>
+  function refreshStats() {
+    const all = DB.getComplaints();
+    document.getElementById('s-total').textContent    = all.length;
+    document.getElementById('s-pending').textContent  = all.filter(c=>c.status==='Submitted'||c.status==='Assigned').length;
+    document.getElementById('s-progress').textContent = all.filter(c=>c.status==='In Progress').length;
+    document.getElementById('s-resolved').textContent = all.filter(c=>c.status==='Resolved'||c.status==='Citizen Verified').length;
+  }
+  refreshStats();
+
+  document.getElementById('journey-trail').innerHTML = UI.statusTrail('In Progress');
+
+  const all = DB.getComplaints().slice(0,6);
+  const msgs = all.map(c=>`${UI.catIcon(c.category)} ${c.id} · ${c.category} · ${c.location} · ${c.status}`);
+  const ticker = document.getElementById('ticker');
+  let ti=0;
+  if(msgs.length){ ticker.textContent=msgs[0]; setInterval(()=>{ ti=(ti+1)%msgs.length; ticker.style.opacity=0; setTimeout(()=>{ticker.textContent=msgs[ti];ticker.style.opacity=1;},300); },3500); }
+</script>
+</body>
+</html>

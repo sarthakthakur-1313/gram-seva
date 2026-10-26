@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GramSeva – Complaint Map</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .map-area {
+      position: relative;
+      background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 30%, #81c784 60%, #aed581 100%);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 480px;
+      border: 2px solid var(--green-300);
+    }
+    /* SVG road lines */
+    .map-area svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .map-legend {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      position: absolute;
+      bottom: 16px; right: 16px;
+      min-width: 160px;
+      font-size: .8rem;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0;
+    }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    }
+    .map-pin-wrap {
+      position: absolute;
+      cursor: pointer;
+      transform: translate(-50%, -100%);
+      transition: transform .2s;
+      z-index: 10;
+    }
+    .map-pin-wrap:hover { transform: translate(-50%,-100%) scale(1.3); z-index: 20; }
+    .map-pin-icon {
+      font-size: 22px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.35));
+      display: block;
+      text-align: center;
+    }
+    .map-pin-label {
+      background: var(--slate-900);
+      color: #fff;
+      font-size: .65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-top: 2px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity .2s;
+      pointer-events: none;
+    }
+    .map-pin-wrap:hover .map-pin-label { opacity: 1; }
+
+    /* Status color rings */
+    .ring-submitted   { outline: 3px solid #2563EB; border-radius: 50%; }
+    .ring-assigned    { outline: 3px solid #F59E0B; border-radius: 50%; }
+    .ring-progress    { outline: 3px solid #854D0E; border-radius: 50%; }
+    .ring-resolved    { outline: 3px solid #40916C; border-radius: 50%; }
+    .ring-verified    { outline: 3px solid #1B4332; border-radius: 50%; }
+
+    .hotspot {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(220,38,38,.15);
+      border: 2px dashed rgba(220,38,38,.4);
+      pointer-events: none;
+      animation: breathe 2.5s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%,100% { transform: translate(-50%,-50%) scale(1); opacity:.6; }
+      50%      { transform: translate(-50%,-50%) scale(1.1); opacity:1; }
+    }
+
+    .sidebar-panel {
+      width: 300px; flex-shrink: 0;
+      background: #fff;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--slate-200);
+      overflow-y: auto;
+      max-height: 520px;
+    }
+    @media (max-width: 768px) {
+      .map-layout { flex-direction: column !important; }
+      .sidebar-panel { width: 100%; max-height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="index.html">
+    <div class="navbar-logo">🏛️</div>
+    <div>
+      <div class="navbar-title">GramSeva</div>
+      <div class="navbar-sub">Complaint Map</div>
+    </div>
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="citizen.html">Citizen Portal</a></li>
+    <li><a href="map.html" class="active">Complaint Map</a></li>
+    <li><a href="admin.html" class="btn-nav btn">Admin</a></li>
+  </ul>
+</nav>
+
+<div style="background:var(--green-900);color:#fff;padding:20px 28px">
+  <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:4px">🗺️ Village Complaint Map</h1>
+  <p style="opacity:.75;font-size:.9rem">All civic complaints pinned on the village map. Red circles indicate problem hotspots.</p>
+</div>
+
+<!-- FILTERS -->
+<div style="background:#fff;border-bottom:1px solid var(--slate-200);padding:12px 24px">
+  <div style="max-width:1200px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="text-xs text-muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.5px">Filter:</span>
+    <button class="btn btn-sm btn-green" id="f-all" onclick="applyFilter('')">All</button>
+    <button class="btn btn-sm" style="background:var(--blue-lt);color:var(--blue);border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:600" id="f-sub" onclick="applyFilter('Submitted')">Submitted</button>
+    <button class="btn btn-sm" style="background:var(--saffron-lt);color:var(--saffron-dk);border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:600" id="f-asgn" onclick="applyFilter('Assigned')">Assigned</button>
+    <button class="btn btn-sm" style="background:#FEF9C3;color:#854D0E;border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:600" id="f-prog" onclick="applyFilter('In Progress')">In Progress</button>
+    <button class="btn btn-sm" style="background:var(--green-100);color:var(--green-700);border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:600" id="f-res" onclick="applyFilter('Resolved')">Resolved</button>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <select id="cat-filter" class="form-select" style="width:150px;padding:7px 10px;font-size:.85rem" onchange="renderMap()">
+        <option value="">All Categories</option>
+        <option>Water Supply</option><option>Roads</option><option>Street Lights</option>
+        <option>Drainage</option><option>Garbage</option><option>Sanitation</option>
+        <option>Public Toilets</option><option>Other</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:1200px;margin:24px auto;padding:0 20px">
+
+  <!-- Stats row -->
+  <div class="grid grid-4" style="margin-bottom:20px">
+    <div class="card" style="padding:14px 16px;text-align:center">
+      <div class="stat-num" id="map-total">0</div>
+      <div class="stat-label">Total Pins</div>
+    </div>
+    <div class="card" style="padding:14px 16px;text-align:center">
+      <div class="stat-num" style="color:var(--red)" id="map-high">0</div>
+      <div class="stat-label">High Priority</div>
+    </div>
+    <div class="card" style="padding:14px 16px;text-align:center">
+      <div class="stat-num" style="color:var(--saffron-dk)" id="map-open">0</div>
+      <div class="stat-label">Open Issues</div>
+    </div>
+    <div class="card" style="padding:14px 16px;text-align:center">
+      <div class="stat-num" style="color:var(--green-700)" id="map-resolved">0</div>
+      <div class="stat-label">Resolved</div>
+    </div>
+  </div>
+
+  <div class="flex gap-16 map-layout" style="align-items:flex-start">
+
+    <!-- MAP -->
+    <div style="flex:1">
+      <div class="map-area" id="map-container">
+
+        <!-- Background roads (decorative SVG) -->
+        <svg viewBox="0 0 800 500" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
+          <!-- Main roads -->
+          <path d="M0,250 Q200,230 400,250 Q600,270 800,250" stroke="rgba(255,255,255,.5)" stroke-width="8" fill="none"/>
+          <path d="M400,0 Q420,150 400,250 Q380,350 400,500" stroke="rgba(255,255,255,.5)" stroke-width="8" fill="none"/>
+          <!-- Secondary roads -->
+          <path d="M0,100 Q300,120 400,100 Q550,80 800,100" stroke="rgba(255,255,255,.3)" stroke-width="4" fill="none"/>
+          <path d="M0,400 Q250,380 400,400 Q600,420 800,400" stroke="rgba(255,255,255,.3)" stroke-width="4" fill="none"/>
+          <path d="M200,0 Q180,200 200,500" stroke="rgba(255,255,255,.25)" stroke-width="4" fill="none"/>
+          <path d="M650,0 Q670,200 650,500" stroke="rgba(255,255,255,.25)" stroke-width="4" fill="none"/>
+          <!-- Buildings/blocks (decorative) -->
+          <rect x="80" y="140" width="60" height="40" rx="4" fill="rgba(255,255,255,.2)"/>
+          <rect x="80" y="300" width="60" height="50" rx="4" fill="rgba(255,255,255,.2)"/>
+          <rect x="500" y="120" width="80" height="50" rx="4" fill="rgba(255,255,255,.2)"/>
+          <rect x="480" y="320" width="60" height="40" rx="4" fill="rgba(255,255,255,.2)"/>
+          <rect x="680" y="200" width="50" height="60" rx="4" fill="rgba(255,255,255,.2)"/>
+          <!-- Water body -->
+          <ellipse cx="150" cy="420" rx="80" ry="40" fill="rgba(100,180,255,.3)" stroke="rgba(100,180,255,.5)" stroke-width="1"/>
+          <text x="150" y="424" text-anchor="middle" font-size="10" fill="rgba(0,100,200,.7)">Tank</text>
+          <!-- Labels -->
+          <text x="50" y="30" font-size="11" fill="rgba(255,255,255,.7)" font-family="sans-serif">North Ward</text>
+          <text x="600" y="30" font-size="11" fill="rgba(255,255,255,.7)" font-family="sans-serif">East Ward</text>
+          <text x="50" y="480" font-size="11" fill="rgba(255,255,255,.7)" font-family="sans-serif">South Ward</text>
+          <text x="580" y="480" font-size="11" fill="rgba(255,255,255,.7)" font-family="sans-serif">Market Area</text>
+          <text x="330" y="260" font-size="10" fill="rgba(255,255,255,.6)" font-family="sans-serif">Main Road</text>
+          <!-- Panchayat building -->
+          <rect x="350" y="210" width="70" height="50" rx="6" fill="rgba(255,255,255,.4)" stroke="white" stroke-width="1"/>
+          <text x="385" y="240" text-anchor="middle" font-size="9" fill="var(--green-900)" font-family="sans-serif" font-weight="bold">Panchayat</text>
+        </svg>
+
+        <!-- Complaint pins rendered by JS -->
+        <div id="pins-container"></div>
+
+        <!-- Legend -->
+        <div class="map-legend">
+          <div style="font-size:.75rem;font-weight:700;color:var(--slate-900);margin-bottom:8px">Legend</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Submitted</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--saffron)"></div>Assigned</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#854D0E"></div>In Progress</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green-500)"></div>Resolved</div>
+          <div class="legend-item">
+            <div style="width:12px;height:12px;border-radius:50%;background:rgba(220,38,38,.2);border:2px dashed var(--red);flex-shrink:0"></div>
+            Hotspot
+          </div>
+        </div>
+      </div>
+      <p class="text-xs text-muted" style="margin-top:8px;text-align:center">Hover pins to see details. Click to view full complaint info.</p>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar-panel">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--slate-200);font-weight:600;font-size:.9rem;color:var(--slate-900);display:flex;justify-content:space-between;align-items:center">
+        <span>Complaint List</span>
+        <span class="text-xs text-muted" id="list-count"></span>
+      </div>
+      <div id="complaint-sidebar-list"></div>
+    </div>
+  </div>
+
+  <!-- Hotspot analysis -->
+  <div class="card" style="margin-top:20px;padding:20px 24px">
+    <h3 style="font-size:1rem;font-weight:600;color:var(--slate-900);margin-bottom:14px">🔥 Problem Hotspot Analysis</h3>
+    <div id="hotspot-analysis" class="grid grid-3"></div>
+  </div>
+</div>
+
+<!-- PIN DETAIL MODAL -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="pin-modal-title">Complaint Detail</span>
+      <button class="modal-close" onclick="UI.closeModal('pin-modal')">✕</button>
+    </div>
+    <div id="pin-modal-body"></div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="db.js"></script>
+<script>
+  var currentFilter = '';
+  var allComplaints = [];
+
+  // Map coordinate mapping (lat/lng -> pixel %)
+  // Our demo data is around lat 18.517-18.526, lng 73.850-73.860
+  var LAT_MIN = 18.515, LAT_MAX = 18.528;
+  var LNG_MIN = 73.848, LNG_MAX = 73.862;
+
+  function latToY(lat) {
+    return (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
+  }
+  function lngToX(lng) {
+    return ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * 100;
+  }
+
+  var statusColors = {
+    'Submitted':       '#2563EB',
+    'Assigned':        '#F59E0B',
+    'In Progress':     '#854D0E',
+    'Resolved':        '#40916C',
+    'Citizen Verified':'#1B4332'
+  };
+
+  function applyFilter(f) {
+    currentFilter = f;
+    renderMap();
+  }
+
+  function renderMap() {
+    allComplaints = DB.getComplaints();
+    var catF = document.getElementById('cat-filter').value;
+
+    var filtered = allComplaints;
+    if (currentFilter) filtered = filtered.filter(function(c){ return c.status === currentFilter; });
+    if (catF)          filtered = filtered.filter(function(c){ return c.category === catF; });
+
+    // Stats
+    document.getElementById('map-total').textContent    = filtered.length;
+    document.getElementById('map-high').textContent     = filtered.filter(function(c){ return c.priority==='High'; }).length;
+    document.getElementById('map-open').textContent     = filtered.filter(function(c){ return c.status!=='Resolved'&&c.status!=='Citizen Verified'; }).length;
+    document.getElementById('map-resolved').textContent = filtered.filter(function(c){ return c.status==='Resolved'||c.status==='Citizen Verified'; }).length;
+    document.getElementById('list-count').textContent   = filtered.length + ' complaints';
+
+    // Render pins
+    var pinsHtml = '';
+
+    // Hotspot circles — cluster nearby open complaints
+    var open = filtered.filter(function(c){ return c.status!=='Resolved'&&c.status!=='Citizen Verified'; });
+    // Simple: show hotspot if more than 1 complaint in same area
+    var seen = {};
+    open.forEach(function(c){
+      var gx = Math.round(lngToX(c.lng) / 15);
+      var gy = Math.round(latToY(c.lat) / 15);
+      var key = gx + '_' + gy;
+      seen[key] = (seen[key]||0)+1;
+    });
+    Object.entries(seen).forEach(function(entry){
+      if (entry[1] >= 2) {
+        var parts = entry[0].split('_');
+        var px = parseInt(parts[0]) * 15 + 7;
+        var py = parseInt(parts[1]) * 15 + 7;
+        pinsHtml += '<div class="hotspot" style="left:' + px + '%;top:' + py + '%;width:80px;height:80px;margin-left:-40px;margin-top:-40px"></div>';
+      }
+    });
+
+    // Pins
+    filtered.forEach(function(c) {
+      var x = lngToX(c.lng);
+      var y = latToY(c.lat);
+      var color = statusColors[c.status] || '#888';
+      pinsHtml += '<div class="map-pin-wrap" style="left:' + x + '%;top:' + y + '%"'
+        + ' onclick="showPinDetail(\'' + c.id + '\')" title="' + c.id + '">'
+        + '<span class="map-pin-icon" style="text-shadow:0 2px 4px rgba(0,0,0,.4)">'
+        + UI.catIcon(c.category)
+        + '</span>'
+        + '<div style="width:8px;height:8px;border-radius:50%;background:' + color + ';margin:2px auto 0;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>'
+        + '<div class="map-pin-label">' + c.id.replace('GRM-2026-','') + ' · ' + c.category + '</div>'
+        + '</div>';
+    });
+    document.getElementById('pins-container').innerHTML = pinsHtml;
+
+    // Sidebar list
+    var listHtml = filtered.length
+      ? filtered.map(function(c){
+          return '<div style="padding:12px 16px;border-bottom:1px solid var(--slate-200);cursor:pointer;transition:background .15s" '
+            + 'onmouseover="this.style.background=\'var(--green-50)\'" onmouseout="this.style.background=\'#fff\'"'
+            + ' onclick="showPinDetail(\'' + c.id + '\')">'
+            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+            + '<span style="font-size:1.1rem">' + UI.catIcon(c.category) + '</span>'
+            + '<span class="complaint-id" style="font-size:.78rem">' + c.id + '</span>'
+            + '<span style="margin-left:auto">' + UI.statusPill(c.status) + '</span>'
+            + '</div>'
+            + '<div class="text-xs text-muted">📍 ' + c.location + '</div>'
+            + '<div class="text-xs" style="margin-top:3px;color:var(--slate-600);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + c.desc + '</div>'
+            + '</div>';
+        }).join('')
+      : '<div style="text-align:center;padding:40px;color:var(--slate-500)">No complaints for this filter.</div>';
+    document.getElementById('complaint-sidebar-list').innerHTML = listHtml;
+
+    // Hotspot analysis
+    buildHotspotAnalysis(allComplaints);
+  }
+
+  function buildHotspotAnalysis(all) {
+    var open = all.filter(function(c){ return c.status!=='Resolved'&&c.status!=='Citizen Verified'; });
+    var cats = {};
+    open.forEach(function(c){ cats[c.category] = (cats[c.category]||0)+1; });
+    var sorted = Object.entries(cats).sort(function(a,b){ return b[1]-a[1]; }).slice(0,3);
+    document.getElementById('hotspot-analysis').innerHTML = sorted.length
+      ? sorted.map(function(entry, i){
+          var icons = ['🔴','🟠','🟡'];
+          return '<div class="card" style="padding:16px;border-left:4px solid var(--red)">'
+            + '<div style="font-size:1.4rem;margin-bottom:6px">' + icons[i] + ' ' + UI.catIcon(entry[0]) + '</div>'
+            + '<div style="font-weight:600;color:var(--slate-900)">' + entry[0] + '</div>'
+            + '<div class="text-sm text-muted"><strong>' + entry[1] + '</strong> open complaints</div>'
+            + '<div class="text-xs text-muted" style="margin-top:4px">Priority area for intervention</div>'
+            + '</div>';
+        }).join('')
+      : '<div style="grid-column:span 3;text-align:center;color:var(--green-700);padding:20px;font-weight:600">All issues resolved.</div>';
+  }
+
+  function showPinDetail(id) {
+    var c = DB.getComplaint(id);
+    if (!c) return;
+    document.getElementById('pin-modal-title').textContent = c.id;
+    document.getElementById('pin-modal-body').innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+      + '<div><div class="text-xs text-muted">Category</div><div class="text-sm text-bold">' + UI.catIcon(c.category) + ' ' + c.category + '</div></div>'
+      + '<div><div class="text-xs text-muted">Status</div>' + UI.statusPill(c.status) + '</div>'
+      + '<div><div class="text-xs text-muted">Priority</div>' + UI.priorityPill(c.priority) + '</div>'
+      + '<div><div class="text-xs text-muted">Filed</div><div class="text-sm">' + UI.formatDate(c.createdAt) + '</div></div>'
+      + '<div style="grid-column:span 2"><div class="text-xs text-muted">Location</div><div class="text-sm">📍 ' + c.location + '</div></div>'
+      + '<div style="grid-column:span 2"><div class="text-xs text-muted">GPS</div><div class="text-sm text-muted">' + c.lat + ', ' + c.lng + '</div></div>'
+      + '<div style="grid-column:span 2"><div class="text-xs text-muted">Description</div><div class="text-sm" style="background:var(--slate-100);padding:10px;border-radius:var(--radius);margin-top:4px">' + c.desc + '</div></div>'
+      + (c.assignedTo ? '<div style="grid-column:span 2"><div class="text-xs text-muted">Assigned To</div><div class="text-sm text-bold">👤 ' + c.assignedTo + '</div></div>' : '')
+      + '</div>'
+      + UI.statusTrail(c.status)
+      + '<div style="margin-top:16px;display:flex;gap:8px">'
+      + '<a href="citizen.html#track" class="btn btn-green btn-sm">Track This Complaint</a>'
+      + '<button class="btn btn-sm" style="background:var(--slate-100);color:var(--slate-700);border:none;cursor:pointer;font-family:var(--font);padding:7px 14px;border-radius:var(--radius);font-size:.82rem;font-weight:500" onclick="UI.closeModal(\'pin-modal\')">Close</button>'
+      + '</div>';
+    UI.openModal('pin-modal');
+  }
+
+  // Init
+  renderMap();
+</script>
+</body>
+</html>
